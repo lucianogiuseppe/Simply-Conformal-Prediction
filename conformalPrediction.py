@@ -1,12 +1,31 @@
-#noCons the index to non compute
-def AvgDist(B,noCons):
-	z = B[noCons] #the z	
-	n = len(B)-1 #B\zi
-	bAvg = (sum(B)-z)/n
-	return (float(n)/(n+1))*abs(bAvg-z)
+import math
 
-#z(x,y) con y label
-#noCons the index to non compute
+############NonConformity measures############
+'''Average Distance
+Z is array of z(x,y): 'y' label and 'x' vector
+noCons: the index to doesn't compute'''
+def AvgDist(Z, noCons):
+	tipo = Z[noCons][1]
+
+	dimV = len(Z[0][0]) #dim of data vectors
+	baryCenter = [] #baryCenter vector
+	#for x,y,z,...
+	for i in xrange(dimV):
+		t = 0
+		n = 0
+		for y in xrange(len(Z)):
+			if Z[y][1] != tipo:
+				continue	
+			t += Z[y][0][i]
+			n += 1
+		baryCenter.append( (float(t)/n) )
+
+	return distanceFunction(baryCenter, Z[noCons][0])
+
+
+'''Nearest Neighbors
+Z is array of z(x,y): 'y' label and 'x' vector
+noCons: the index to doesn't compute'''
 def NN(Z, noCons):
 	minEq = float('inf')
 	minDis = float('inf')
@@ -17,11 +36,11 @@ def NN(Z, noCons):
 
 		#same label
 		if Z[i][1] == Z[noCons][1]:
-			t = abs(Z[i][0]-Z[noCons][0])
+			t = distanceFunction(Z[i][0], Z[noCons][0])
 			if t < minEq:
 				minEq = t
 		else:
-			t = abs(Z[i][0]-Z[noCons][0])
+			t = distanceFunction(Z[i][0], Z[noCons][0])
 			if t < minDis:
 				minDis = t
 
@@ -33,7 +52,57 @@ def NN(Z, noCons):
 
 	return float(minEq)/minDis
 
-#B training set
+
+
+############Distance functions############
+def cosineSimilarity(vectorA, vectorB):
+	
+	lenV = __testLen(vectorA, vectorB)
+
+	numerator = 0
+	A2 = 0
+	B2 = 0
+	for i in xrange(lenV):
+		numerator += vectorA[i] * vectorB[i]
+		A2 += math.pow(vectorA[i],2)
+		B2 += math.pow(vectorB[i],2)
+
+	denominator = math.sqrt(A2) * math.sqrt(B2)
+
+	return 1 - (float(numerator)/denominator)
+
+def squaredDistance(vectorA, vectorB):
+	
+	lenV = __testLen(vectorA, vectorB)
+	dist = 0
+	for i in xrange(lenV):
+		t = vectorA[i] - vectorB[i]
+		dist += math.pow(t,2)
+
+	return dist
+
+
+def euclideanDistance(vectorA, vectorB):
+	return math.sqrt(squaredDistance(vectorA, vectorB))
+
+'''Check if vectors have the same dimension'''
+def __testLen(vectorA, vectorB):
+	lenA = len(vectorA)
+	lenB = len(vectorB)
+
+	if lenA != lenB:
+		raise Exception("vectors dimension is different -> A:%d - B:%d"%(lenA, lenB))
+
+	return lenA
+
+
+############Algorithms############
+
+'''Conformal Prediction
+A: nonConformity function
+B: training set
+z: the test example
+'''
 def ConfPred(A, error, B, z):
 	Aalpha = []
 	B.append(z)
@@ -55,15 +124,11 @@ def ConfPred(A, error, B, z):
 		return False, pValue
 
 
-def __nonconformityScore(A, B, z):
-	B.append(z)
-	n=len(B)
-	az = A(B, n-1)
-	
-	B.pop(n-1) #restore previus state of B
-
-	return az
-
+'''Inductive Conformal Prediction
+A: nonConformity function
+B: training set
+Aalpha: non-conformity scores
+z: the test example'''
 def IndConfPred(A, error, B, Aalpha, z):
 
 	az = __nonconformityScore(A, B, z)
@@ -80,20 +145,80 @@ def IndConfPred(A, error, B, Aalpha, z):
 	else:
 		return False, pValue
 
+def __nonconformityScore(A, B, z):
+	B.append(z)
+	n=len(B)
+	az = A(B, n-1)
+	
+	B.pop(n-1) #restore previus state of B
 
-#v=0, s=1
-sepal = [[5,1], [4.4, 1], [4.9,1], [4.4,1], [5.1,1], [5.9,0], [5, 1], [6.4, 0], [6.7,0], [6.2,0], [5.1, 1], [4.6, 1], [5,1], [5.4, 1], [5, 0], [6.7, 0], [5.8, 0], [5.5,1], [5.8,0], [5.4, 1], [5.1, 1], [5.7,0], [4.6,1], [4.6, 1]]
+	return az
 
-print ConfPred(NN, 0.05, sepal, [6.8, 0])
+############Main############
 
-'''
-#To test the inductive version
-properSet = sepal[:15]
-calibrationSet = sepal[15:]
 
-Aalpha = []
-n = len(calibrationSet)
-for i in xrange(n):
-	Aalpha.append(__nonconformityScore(NN, properSet, calibrationSet[i]))
+if __name__ == "__main__":
 
-print IndConfPred(NN, 0.05, properSet, Aalpha, [6.8, 0])'''
+	sepalTraining = [] #training set
+	sepalTest = [] #test set
+
+	#read the file
+	lineCounter = 1
+	with open("testIris.csv", "r") as f:
+		for line in f:
+			t = (line.replace("\n", "").split(","))
+			dataVector = []
+			for i in range(4):
+				dataVector.append(float(t[i]))
+
+			if lineCounter > 60:
+				sepalTest.append(dataVector)
+			else:
+				tipo = 0 #v=0, s=1
+				if t[4] == "Iris-setosa":
+					tipo = 1
+				sepalTraining.append([dataVector, tipo])
+
+			lineCounter += 1
+
+	#set the distance function
+	distanceFunction =  cosineSimilarity #squaredDistance 
+	NonConfFunction = NN #AvgDist
+
+	#To test Conformal Prediction
+	for i in xrange(20):
+		v = sepalTest[i]
+		rSetora = ConfPred(NonConfFunction, 0.05, sepalTraining, [v,1])
+		rVersicolor =  ConfPred(NonConfFunction, 0.05, sepalTraining, [v,0])
+
+		if rSetora > rVersicolor:
+			print("%d -> Setosa"%(60+i+1))
+			sepalTraining.append([v,1])
+		else:
+			print("%d -> Versicolor"%(60+i+1))
+			sepalTraining.append([v,0])
+
+
+	
+	'''#To test the Inductive Conformal Prediction
+	properSet = sepalTraining[:40]
+	calibrationSet = sepalTraining[40:]
+
+	Aalpha = []
+	n = len(calibrationSet)
+	for i in xrange(n):
+		Aalpha.append(__nonconformityScore(NonConfFunction, properSet, calibrationSet[i]))
+
+
+	for i in xrange(20):
+		v = sepalTest[i]
+		rSetora = IndConfPred(NonConfFunction, 0.05, properSet, Aalpha, [v,1])
+		rVersicolor =  IndConfPred(NonConfFunction, 0.05, properSet, Aalpha, [v,0])
+
+		if rSetora > rVersicolor:
+			print("%d -> Setosa"%(60+i+1))
+			Aalpha.append(__nonconformityScore(NonConfFunction, properSet, [v,1]))
+		else:
+			print("%d -> Versicolor"%(60+i+1))
+			Aalpha.append(__nonconformityScore(NonConfFunction, properSet, [v,0]))'''
+
