@@ -188,10 +188,10 @@ if __name__ == "__main__":
 	#To test Conformal Prediction
 	for i in xrange(20):
 		v = sepalTest[i]
-		rSetora = ConfPred(NonConfFunction, 0.05, sepalTraining, [v,1])
-		rVersicolor =  ConfPred(NonConfFunction, 0.05, sepalTraining, [v,0])
+		canAddSetosa, pSetora = ConfPred(NonConfFunction, 0.05, sepalTraining, [v,1])
+		canAddVers, pVersicolor =  ConfPred(NonConfFunction, 0.05, sepalTraining, [v,0])
 
-		if rSetora > rVersicolor:
+		if pSetora > pVersicolor:
 			print("%d -> Setosa"%(60+i+1))
 			sepalTraining.append([v,1])
 		else:
@@ -212,10 +212,10 @@ if __name__ == "__main__":
 
 	for i in xrange(20):
 		v = sepalTest[i]
-		rSetora = IndConfPred(NonConfFunction, 0.05, properSet, Aalpha, [v,1])
-		rVersicolor =  IndConfPred(NonConfFunction, 0.05, properSet, Aalpha, [v,0])
+		canAddSetosa, pSetora = IndConfPred(NonConfFunction, 0.05, properSet, Aalpha, [v,1])
+		canAddVers, pVersicolor =  IndConfPred(NonConfFunction, 0.05, properSet, Aalpha, [v,0])
 
-		if rSetora > rVersicolor:
+		if pSetora > pVersicolor:
 			print("%d -> Setosa"%(60+i+1))
 			Aalpha.append(__nonconformityScore(NonConfFunction, properSet, [v,1]))
 		else:
