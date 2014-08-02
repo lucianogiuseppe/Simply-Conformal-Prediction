@@ -64,8 +64,8 @@ def cosineSimilarity(vectorA, vectorB):
 	B2 = 0
 	for i in xrange(lenV):
 		numerator += vectorA[i] * vectorB[i]
-		A2 += math.pow(vectorA[i],2)
-		B2 += math.pow(vectorB[i],2)
+		A2 += vectorA[i]*vectorA[i]
+		B2 += vectorB[i]*vectorB[i]
 
 	denominator = math.sqrt(A2) * math.sqrt(B2)
 
