@@ -180,6 +180,7 @@ if __name__ == "__main__":
 				sepalTraining.append([dataVector, tipo])
 
 			lineCounter += 1
+	lineCounter -= 1 #fix the number of read lines
 
 	#set the distance function
 	distanceFunction =  cosineSimilarity #squaredDistance 
