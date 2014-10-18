@@ -55,6 +55,8 @@ def NN(Z, noCons):
 
 
 ############Distance functions############
+#return 0: vectors have same orientation
+#return 2: vectors are diametrically opposed
 def cosineSimilarity(vectorA, vectorB):
 	
 	lenV = __testLen(vectorA, vectorB)
@@ -67,7 +69,9 @@ def cosineSimilarity(vectorA, vectorB):
 		A2 += vectorA[i]*vectorA[i]
 		B2 += vectorB[i]*vectorB[i]
 
-	denominator = math.sqrt(A2) * math.sqrt(B2)
+	denominator = math.sqrt(A2*B2)
+	if denominator == 0:
+		return 2
 
 	return 1 - (float(numerator)/denominator)
 
@@ -77,7 +81,7 @@ def squaredDistance(vectorA, vectorB):
 	dist = 0
 	for i in xrange(lenV):
 		t = vectorA[i] - vectorB[i]
-		dist += math.pow(t,2)
+		dist += t*t
 
 	return dist
 
